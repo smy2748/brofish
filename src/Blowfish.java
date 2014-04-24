@@ -4,6 +4,7 @@
 public class Blowfish {
 
     protected int[] P,S0,S1,S2,S3;
+    protected long uSalt, lSalt;
 
     protected static final int[]
             P_base = {0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344, 0xa4093822, 0x299f31d0,
@@ -192,15 +193,17 @@ public class Blowfish {
 
 
     public Blowfish(){
+        setSalt(0,0);
         resetPandS();
     }
 
     public Blowfish(byte[] key){
+        setSalt(0,0);
         resetPandS();
         initialize(key);
     }
 
-    private void resetPandS(){
+    protected void resetPandS(){
         P = P_base.clone();
         S0 = S0_base.clone();
         S1 = S1_base.clone();
@@ -212,6 +215,12 @@ public class Blowfish {
         resetPandS();
         initialize(key);
     }
+
+    public void setSalt(long first, long second){
+        uSalt = first;
+        lSalt = second;
+    }
+
 
     public  long encrypt(long word){
         int xL, xR, t;
@@ -254,7 +263,7 @@ public class Blowfish {
 
     }
 
-    private void xorPArray(byte[] key){
+    protected void xorPArray(byte[] key){
         int keyIndex=0;
 
         for(int i=0; i<P.length; i++){
@@ -276,36 +285,66 @@ public class Blowfish {
         }
     }
 
-    private void encryptPAndS(){
-        long cur = 0;
+    protected void encryptPAndS(){
+        long cur = uSalt;
         cur = encrypt(cur);
         for(int i=0; i< P.length; i+=2){
-            P[i] = (int)((cur >>> 32)&(0xFFFFFFFF));
-            P[i+1] = (int)((cur)&(0xFFFFFFFF));
+            P[i] = (int)(cur >>> 32);
+            P[i+1] = (int)(cur);
+            if(i%4 == 0){
+                cur ^= lSalt;
+            }
+            else{
+                cur^=uSalt;
+            }
             cur = encrypt(cur);
         }
 
         for(int i=0; i< S0.length; i+=2){
             S0[i] = (int)(cur >>> 32);
             S0[i+1] = (int)(cur);
+            if(i%4 == 2){
+                cur ^= lSalt;
+            }
+            else{
+                cur^=uSalt;
+            }
             cur = encrypt(cur);
         }
 
         for(int i=0; i< S1.length; i+=2){
             S1[i] = (int)(cur >>> 32);
             S1[i+1] = (int)(cur);
+            if(i%4 == 0){
+                cur ^= lSalt;
+            }
+            else{
+                cur^=uSalt;
+            }
             cur = encrypt(cur);
         }
 
         for(int i=0; i< S2.length; i+=2){
             S2[i] = (int)(cur >>> 32);
             S2[i+1] = (int)(cur);
+            if(i%4 == 2){
+                cur ^= lSalt;
+            }
+            else{
+                cur^=uSalt;
+            }
             cur = encrypt(cur);
         }
 
         for(int i=0; i< S3.length; i+=2){
             S3[i] = (int)(cur >>> 32);
             S3[i+1] = (int)(cur);
+            if(i%4 == 0){
+                cur ^= lSalt;
+            }
+            else{
+                cur^=uSalt;
+            }
             cur = encrypt(cur);
         }
     }

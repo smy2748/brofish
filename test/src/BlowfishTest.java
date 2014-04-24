@@ -59,6 +59,7 @@ public class BlowfishTest {
         }
     }
 
+    @Test
     public void testEncryptWithKeyRollover(){
         Blowfish b = new Blowfish();
 
@@ -67,7 +68,7 @@ public class BlowfishTest {
         long test = b.encrypt(0x0123456789ABCDEFL);
         assertEquals(0xFA34EC4847B268B2L,test);
 
-        key = ByteBuffer.allocate(2).putInt(0x0101).array();
+        key = ByteBuffer.allocate(2).put(0,(byte)0x01).put(0,(byte)0x01).array();
 
         b.setKey(key);
         test = b.encrypt(0x0123456789ABCDEFL);
