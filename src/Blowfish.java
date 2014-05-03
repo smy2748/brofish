@@ -1,10 +1,13 @@
 /**
- * Created by Stephen Yingling on 4/12/14.
+ * A class that can encrypt and decrypt using the blowfish encryption algorithm.
+ * Includes the allowance for a salt as described in the bCrypt specification,
+ * although one cannot set the salt in the default implementation of the algorithm.
+ * @author Stephen Yingling
  */
 public class Blowfish {
 
     protected int[] P,S0,S1,S2,S3;
-    protected long uSalt, lSalt;
+    protected long uSalt=0, lSalt=0;
 
     protected static final int[]
             P_base = {0x243f6a88, 0x85a308d3, 0x13198a2e, 0x03707344, 0xa4093822, 0x299f31d0,
@@ -191,18 +194,25 @@ public class Blowfish {
             0x01c36ae4, 0xd6ebe1f9, 0x90d4f869, 0xa65cdea0, 0x3f09252d, 0xc208e69f,
             0xb74e6132, 0xce77e25b, 0x578fdfe3, 0x3ac372e6};
 
-
+    /**
+     * Creates a new instance of the algorithm with no key set
+     */
     public Blowfish(){
-        setSalt(0,0);
         resetPandS();
     }
 
+    /**
+     * Creates a new instance of the algorithm with the given key
+     * @param key A key in byte array form.
+     */
     public Blowfish(byte[] key){
-        setSalt(0,0);
         resetPandS();
         initialize(key);
     }
 
+    /**
+     * Used internally to reset the P and S boxes when needed
+     */
     protected void resetPandS(){
         P = P_base.clone();
         S0 = S0_base.clone();
@@ -211,18 +221,21 @@ public class Blowfish {
         S3 = S3_base.clone();
     }
 
+    /**
+     * Set the key to the one provided
+     * @param key A key in byte array form.
+     */
     public void setKey(byte[] key){
         resetPandS();
         initialize(key);
     }
 
-    public void setSalt(long first, long second){
-        uSalt = first;
-        lSalt = second;
-    }
-
-
-    public  long encrypt(long word){
+    /**
+     * Encrypts a 64-bit value
+     * @param word The 64-bit value to be encrypted
+     * @return The encrypted 64-bit value
+     */
+    public long encrypt(long word){
         int xL, xR, t;
         xR = (int)word & 0xFFFFFFFF;
         xL = (int)((word >>> 32)& 0xFFFFFFFF);
@@ -245,6 +258,11 @@ public class Blowfish {
         return result;
     }
 
+    /**
+     * Performs the Feistel Function on the given input
+     * @param x The integer to apply the Feistel function to
+     * @return The result of the feistel function for input x
+     */
     public int f(int x){
         short a,b,c,d;
         a = (short)((x >>> 24) &0xFF);
@@ -252,17 +270,22 @@ public class Blowfish {
         c = (short)((x >>> 8)&0xFF);
         d = (short)(x & 0xFF);
 
-
         return ((S0[a] + S1[b]) ^ S2[c]) + S3[d];
     }
 
-    public void initialize(byte[] key){
+    /**
+     * Initialize the cipher with the given key.
+     * @param key The key being used
+     */
+    protected void initialize(byte[] key){
         xorPArray(key);
         encryptPAndS();
-
-
     }
 
+    /**
+     * Cyclically XOR the key bits with the P Array
+     * @param key The key being used
+     */
     protected void xorPArray(byte[] key){
         int keyIndex=0;
 
@@ -285,6 +308,9 @@ public class Blowfish {
         }
     }
 
+    /**
+     * Perform the initialization of the P and S boxes by encrypting the entries
+     */
     protected void encryptPAndS(){
         long cur = uSalt;
         cur = encrypt(cur);
